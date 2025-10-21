@@ -42,7 +42,6 @@ export async function sendMassives(
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 30000, // 30 seconds timeout
       }
     );
 
