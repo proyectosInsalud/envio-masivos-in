@@ -1,2 +1,4 @@
-// Re-export all schemas for backward compatibility
-export * from '@/schemas';
+// Export types
+export * from './excel';
+export * from './image';
+export * from './manager';

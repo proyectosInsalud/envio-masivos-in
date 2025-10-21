@@ -7,7 +7,23 @@ import { Button } from '@/components/ui/button';
 import ExcelUploadCard from './ExcelUploadCard';
 import ImageUploadForm from './ImageUploadForm';
 import ManagersTable from './ManagersTable';
-import type { ImageFormData, Manager } from '@/types';
+import type { ImageFormData } from '@/types';
+import { sendMassives, type MassivesRequest } from '@/services/massives';
+
+// Lista de números conectados con nombres (solo ✅)
+const CONNECTED_PHONE_NUMBERS = [
+  { name: "Tadeo Coordinador GOLF", number: "51941554272" },
+  { name: "Francesca Arias", number: "51964317736" },
+  { name: "Madelein JM Inluxury", number: "5198746418" },
+  { name: "Melanny corpo JM", number: "51956725804" },
+  { name: "Eliana corpo JM", number: "51956725811" },
+  { name: "Roxana", number: "51993997532" },
+  { name: "Lisbeth InAesthetics", number: "51953200699" },
+  { name: "Yohanna JM InAesthetics", number: "51974309260" },
+  { name: "Katherine -Yohanna InLuxury", number: "51997621747" },
+  { name: "Rodrigo INB2B", number: "51943583887" },
+  { name: "Fernando INB2B", number: "51969332494" },  
+];
 
 export default function ExcelReader() {
   const [data, setData] = useState<string[][]>([]);
@@ -15,45 +31,11 @@ export default function ExcelReader() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [image, setImage] = useState<string | null>(null);
-  const [selectedManager, setSelectedManager] = useState<string | null>(null);
-  const [managers] = useState<Manager[]>([
-    {
-      id: '1',
-      name: 'María González',
-      phone: '+51 987 654 321',
-      product: 'VPH',
-      sede: 'Golf'
-    },
-    {
-      id: '2',
-      name: 'Carlos Rodríguez',
-      phone: '+51 987 654 322',
-      product: 'Prostatitis',
-      sede: 'SJM'
-    },
-    {
-      id: '3',
-      name: 'Ana López',
-      phone: '+51 987 654 323',
-      product: 'VPH',
-      sede: 'JM'
-    },
-    {
-      id: '4',
-      name: 'Pedro Martínez',
-      phone: '+51 987 654 324',
-      product: 'Prostatitis',
-      sede: 'Golf'
-    },
-    {
-      id: '5',
-      name: 'Laura Sánchez',
-      phone: '+51 987 654 325',
-      product: 'VPH',
-      sede: 'SJM'
-    }
-  ]);
+  const [selectedManagers, setSelectedManagers] = useState<(string | number)[]>([]);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // No need to fetch managers since we use hardcoded phone numbers
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -87,9 +69,10 @@ export default function ExcelReader() {
       setHeaders(limitedHeaders);
 
       // Rest of the rows as data, limited to first 2 columns
-      const dataRows = rows.slice(1).map(row =>
-        row.slice(0, 2).map(cell => cell?.toString() || '')
-      );
+      // Filter out rows that don't have both columns complete
+      const dataRows = rows.slice(1)
+        .map(row => row.slice(0, 2).map(cell => cell?.toString().trim() || ''))
+        .filter(row => row[0].length > 0 && row[1].length > 0);
       setData(dataRows);
     } catch (err) {
       setError('Error al leer el archivo Excel. Asegúrate de que sea un archivo válido.');
@@ -100,42 +83,95 @@ export default function ExcelReader() {
   };
 
   const onImageSubmit = (data: ImageFormData) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImage(e.target?.result as string);
-    };
-    reader.readAsDataURL(data.image);
+    setUploadedFile(data.image);
+    const isPDF = data.image.type === 'application/pdf';
+
+    if (!isPDF) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(data.image);
+    } else {
+      setImage(null); // No mostrar preview para PDFs
+    }
   };
 
-  const handleFinalSubmit = () => {
+  const handleFinalSubmit = async () => {
     // Validaciones
     if (data.length === 0) {
       alert('Por favor, sube un archivo Excel primero.');
       return;
     }
 
-    if (!selectedManager) {
-      alert('Por favor, selecciona un gestor.');
+    if (selectedManagers.length === 0) {
+      alert('Por favor, selecciona al menos un número.');
       return;
     }
 
-    // Recopilar todos los datos
-    const selectedManagerData = managers.find(m => m.id === selectedManager);
+    // El archivo es opcional ahora
 
-    const collectedData = {
-      excelData: {
-        headers,
-        rows: data,
-        totalRows: data.length
-      },
-      image: image ? 'Imagen subida (opcional)' : 'Sin imagen',
-      manager: selectedManagerData,
-      timestamp: new Date().toISOString()
-    };
+    // Verificar que haya al menos una fila válida después del filtrado
+    const validContacts = data
+      .map(row => ({
+        destinationNumber: row[0]?.toString().trim() || '',
+        message: row[1]?.toString().trim() || ''
+      }))
+      .filter(contact =>
+        contact.destinationNumber.length > 0 &&
+        contact.message.length > 0
+      );
 
-    console.log('Datos recopilados para envío de mensajes masivos:', collectedData);
+    if (validContacts.length === 0) {
+      alert('No hay filas válidas en el Excel. Cada fila debe tener número de teléfono y mensaje.');
+      return;
+    }
 
-    alert('Datos impresos en la consola. Revisa las herramientas de desarrollo del navegador.');
+    setIsSubmitting(true);
+
+    try {
+      // Preparar datos para la API - filtrar filas que no tengan ambas columnas completas
+      const contacts = data
+        .map(row => ({
+          destinationNumber: row[0]?.toString().trim() || '',
+          message: row[1]?.toString().trim() || ''
+        }))
+        .filter(contact =>
+          contact.destinationNumber.length > 0 &&
+          contact.message.length > 0
+        );
+
+      // Usar números de teléfono conectados seleccionados
+      const selectedPhoneNumbers = selectedManagers.map(index => CONNECTED_PHONE_NUMBERS[Number(index)].number).filter(Boolean);
+
+      const massivesData: MassivesRequest = {
+        contacts,
+        managers: selectedPhoneNumbers.map(phoneNumber => ({
+          phoneSender: phoneNumber
+        }))
+      };
+
+      // Enviar a la API (archivo es opcional)
+      const response = await sendMassives(massivesData, uploadedFile || undefined);
+
+      if (response.success) {
+        alert('Mensajes masivos enviados correctamente.');
+        // Limpiar formulario después del éxito
+        setData([]);
+        setHeaders([]);
+        setImage(null);
+        setUploadedFile(null);
+        setSelectedManagers([]);
+      } else {
+        alert(`Error al enviar mensajes: ${response.error || 'Error desconocido'}`);
+      }
+    } catch (error) {
+      console.error('Error sending massives:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido al enviar mensajes masivos';
+      alert(`Error: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -267,8 +303,8 @@ export default function ExcelReader() {
           />
 
           <ManagersTable
-            selectedManager={selectedManager}
-            onManagerSelect={setSelectedManager}
+            selectedManagers={selectedManagers}
+            onManagerSelect={setSelectedManagers}
           />
 
           <Card className="border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-card to-card/95" data-aos="fade-up" data-aos-delay="200">
@@ -277,25 +313,35 @@ export default function ExcelReader() {
                 <Button
                   onClick={handleFinalSubmit}
                   size="lg"
-                  className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                  disabled={isSubmitting}
+                  className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg
-                    className="w-5 h-5 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Imprimir Datos en Consola
+                  {isSubmitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/20 border-t-white mr-2"></div>
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                        />
+                      </svg>
+                      Enviar Mensajes Masivos
+                    </>
+                  )}
                 </Button>
                 <p className="text-sm text-muted-foreground font-sans mt-3">
-                  Revisa la consola del navegador para ver todos los datos recopilados
+                  Los mensajes serán enviados a través de la plataforma de mensajería
                 </p>
               </div>
             </CardContent>

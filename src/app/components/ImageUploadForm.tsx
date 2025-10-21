@@ -17,12 +17,19 @@ export default function ImageUploadForm({ onImageSubmit, image }: ImageUploadFor
   useEffect(() => {
     if (selectedFile) {
       // Validar archivo
-      if (selectedFile.size > 2 * 1024 * 1024) {
-        setError('La imagen debe ser de máximo 2MB');
+      const isImage = selectedFile.type.startsWith('image/');
+      const isPDF = selectedFile.type === 'application/pdf';
+
+      if (!isImage && !isPDF) {
+        setError('Por favor selecciona un archivo de imagen o PDF válido');
         return;
       }
-      if (!selectedFile.type.startsWith('image/')) {
-        setError('Por favor selecciona un archivo de imagen válido');
+
+      // Validar tamaño según el tipo de archivo
+      const maxSize = isPDF ? 5 * 1024 * 1024 : 2 * 1024 * 1024; // 5MB para PDF, 2MB para imágenes
+      if (selectedFile.size > maxSize) {
+        const maxSizeText = isPDF ? '5MB' : '2MB';
+        setError(`El archivo debe ser de máximo ${maxSizeText}`);
         return;
       }
 
@@ -30,6 +37,9 @@ export default function ImageUploadForm({ onImageSubmit, image }: ImageUploadFor
       onImageSubmit({ image: selectedFile });
     }
   }, [selectedFile, onImageSubmit]);
+
+  // Determinar el tipo de archivo para mostrar la preview correcta
+  const currentFileType = selectedFile?.type === 'application/pdf' ? 'pdf' : selectedFile?.type.startsWith('image/') ? 'image' : null;
 
   return (
     <Card className="border-secondary/20 shadow-lg" data-aos="fade-left">
@@ -51,9 +61,9 @@ export default function ImageUploadForm({ onImageSubmit, image }: ImageUploadFor
             </svg>
           </div>
           <div>
-            <CardTitle className="font-heading text-2xl">Agregar Imagen</CardTitle>
+            <CardTitle className="font-heading text-2xl">Agregar Archivo</CardTitle>
             <CardDescription className="font-sans text-base">
-              Sube una imagen complementaria de máximo 2MB
+              Sube una imagen (máx. 2MB) o PDF (máx. 5MB)
             </CardDescription>
           </div>
         </div>
@@ -63,7 +73,7 @@ export default function ImageUploadForm({ onImageSubmit, image }: ImageUploadFor
           <div className="border-2 border-dashed border-primary/30 rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.pdf"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
@@ -94,7 +104,7 @@ export default function ImageUploadForm({ onImageSubmit, image }: ImageUploadFor
               </div>
               <div>
                 <p className="text-lg font-medium text-foreground font-sans">
-                  Haz clic para seleccionar una imagen
+                  Haz clic para seleccionar una imagen o PDF
                 </p>
                 <p className="text-sm text-muted-foreground font-sans">
                   o arrastra y suelta aquí
@@ -121,7 +131,7 @@ export default function ImageUploadForm({ onImageSubmit, image }: ImageUploadFor
             </div>
           )}
         </div>
-        {image && (
+        {selectedFile && (
           <div className="mt-8 p-4 bg-muted/30 rounded-lg border border-border/50">
             <div className="flex items-center space-x-3 mb-3">
               <div className="p-2 bg-accent/10 rounded-full">
@@ -140,17 +150,46 @@ export default function ImageUploadForm({ onImageSubmit, image }: ImageUploadFor
                 </svg>
               </div>
               <p className="text-sm font-medium text-foreground font-sans">
-                Imagen subida correctamente
+                Archivo subido correctamente
               </p>
             </div>
-            <Image
-              src={image}
-              alt="Imagen subida por el usuario"
-              width={400}
-              height={300}
-              className="max-w-sm h-auto rounded-lg shadow-md border border-border/50"
-              style={{ objectFit: 'contain' }}
-            />
+
+            {currentFileType === 'pdf' ? (
+              <div className="flex items-center space-x-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="p-3 bg-red-100 rounded-full">
+                  <svg
+                    className="w-6 h-6 text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-medium text-red-900 font-sans">{selectedFile.name}</p>
+                  <p className="text-sm text-red-700 font-sans">
+                    PDF • {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+              </div>
+            ) : (
+              image && (
+                <Image
+                  src={image}
+                  alt="Imagen subida por el usuario"
+                  width={400}
+                  height={300}
+                  className="max-w-sm h-auto rounded-lg shadow-md border border-border/50"
+                  style={{ objectFit: 'contain' }}
+                />
+              )
+            )}
           </div>
         )}
       </CardContent>

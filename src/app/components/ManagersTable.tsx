@@ -1,106 +1,58 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import type { Manager } from '@/types';
 
-// Mock data para desarrollo
-const mockManagers: Manager[] = [
-  {
-    id: '1',
-    name: 'María González',
-    phone: '+51 987 654 321',
-    product: 'VPH',
-    sede: 'Golf'
-  },
-  {
-    id: '2',
-    name: 'Carlos Rodríguez',
-    phone: '+51 987 654 322',
-    product: 'Prostatitis',
-    sede: 'SJM'
-  },
-  {
-    id: '3',
-    name: 'Ana López',
-    phone: '+51 987 654 323',
-    product: 'VPH',
-    sede: 'JM'
-  },
-  {
-    id: '4',
-    name: 'Pedro Martínez',
-    phone: '+51 987 654 324',
-    product: 'Prostatitis',
-    sede: 'Golf'
-  },
-  {
-    id: '5',
-    name: 'Laura Sánchez',
-    phone: '+51 987 654 325',
-    product: 'VPH',
-    sede: 'SJM'
-  }
+// Lista de números conectados con nombres (solo ✅)
+const CONNECTED_PHONE_NUMBERS = [
+  { name: "Tadeo Coordinador GOLF", number: "51941554272" },
+  { name: "Francesca Arias", number: "51964317736" },
+  { name: "Madelein JM Inluxury", number: "5198746418" },
+  { name: "Melanny corpo JM", number: "51956725804" },
+  { name: "Eliana corpo JM", number: "51956725811" },
+  { name: "Roxana", number: "51993997532" },
+  { name: "Lisbeth InAesthetics", number: "51953200699" },
+  { name: "Yohanna JM InAesthetics", number: "51974309260" },
+  { name: "Katherine -Yohanna InLuxury", number: "51997621747" },
+  { name: "Rodrigo INB2B", number: "51943583887" },
+  { name: "Fernando INB2B", number: "51969332494" },  
 ];
 
 interface ManagersTableProps {
-  selectedManager: string | null;
-  onManagerSelect: (managerId: string) => void;
+  selectedManagers: (string | number)[];
+  onManagerSelect: (managerIds: (string | number)[]) => void;
 }
 
-export default function ManagersTable({ selectedManager, onManagerSelect }: ManagersTableProps) {
-  const [managers, setManagers] = useState<Manager[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+export default function ManagersTable({ selectedManagers, onManagerSelect }: ManagersTableProps) {
+  const handleManagerToggle = (index: number) => {
+    const isSelected = selectedManagers.includes(index);
+    if (isSelected) {
+      onManagerSelect(selectedManagers.filter(id => id !== index));
+    } else {
+      onManagerSelect([...selectedManagers, index]);
+    }
+  };
 
-  useEffect(() => {
-    const fetchManagers = async () => {
-      try {
-        // En desarrollo usamos mock data
-        // En producción: const response = await axios.get<ManagersResponse>('/api/managers');
-        // setManagers(response.data.data);
+  const handleSelectAll = () => {
+    if (selectedManagers.length === CONNECTED_PHONE_NUMBERS.length) {
+      onManagerSelect([]);
+    } else {
+      onManagerSelect(CONNECTED_PHONE_NUMBERS.map((_, index) => index));
+    }
+  };
 
-        // Simular delay de API
-        await new Promise(resolve => setTimeout(resolve, 1000));
+  // No loading or error states needed since data is hardcoded
 
-        setManagers(mockManagers);
-      } catch (err) {
-        setError('Error al cargar los gestores');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchManagers();
-  }, []);
-
-  if (loading) {
-    return (
-      <Card className="border-primary/20 shadow-lg">
-        <CardContent className="pt-6">
-          <div className="text-center py-8">
-            <div className="inline-flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary/20 border-t-primary"></div>
-            </div>
-            <p className="mt-4 text-muted-foreground font-sans">Cargando gestores...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="border-destructive/20 shadow-lg bg-destructive/5">
-        <CardContent className="pt-6">
-          <div className="flex items-start space-x-3">
-            <div className="p-2 bg-destructive/10 rounded-full flex-shrink-0">
+  return (
+    <Card className="border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-card to-card/95" data-aos="fade-right">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl shadow-sm">
               <svg
-                className="w-5 h-5 text-destructive"
+                className="w-7 h-7 text-primary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -109,91 +61,73 @@ export default function ManagersTable({ selectedManager, onManagerSelect }: Mana
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
             </div>
             <div>
-              <h3 className="font-semibold text-destructive font-sans mb-1">
-                Error al cargar gestores
-              </h3>
-              <p className="text-sm text-muted-foreground font-sans">{error}</p>
+              <CardTitle className="font-heading text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Seleccionar Números
+              </CardTitle>
+              <CardDescription className="font-sans text-base">
+                Elige los números desde donde se enviarán los mensajes masivos
+              </CardDescription>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="border-primary/20 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-card to-card/95" data-aos="fade-right">
-      <CardHeader className="pb-4">
-        <div className="flex items-center space-x-3">
-          <div className="p-3 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl shadow-sm">
-            <svg
-              className="w-7 h-7 text-primary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-          </div>
-          <div>
-            <CardTitle className="font-heading text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Seleccionar Gestor
-            </CardTitle>
-            <CardDescription className="font-sans text-base">
-              Elige el gestor que enviará los mensajes masivos
-            </CardDescription>
-          </div>
+          <Button
+            onClick={handleSelectAll}
+            variant="outline"
+            size="sm"
+            className="font-sans"
+          >
+            {selectedManagers.length === CONNECTED_PHONE_NUMBERS.length ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <RadioGroup value={selectedManager || ''} onValueChange={onManagerSelect}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {managers.map((manager) => (
+        <div className="max-h-96 overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pr-2">
+            {CONNECTED_PHONE_NUMBERS.map((contact, index) => (
               <div
-                key={manager.id}
+                key={index}
                 className="flex items-center space-x-4 p-3 sm:p-5 border border-border/50 rounded-xl hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent/5 hover:border-primary/30 transition-all duration-300 hover:shadow-md group"
               >
-                <RadioGroupItem value={manager.id} id={manager.id} />
+                <Checkbox
+                  id={index.toString()}
+                  checked={selectedManagers.includes(index)}
+                  onCheckedChange={() => handleManagerToggle(index)}
+                />
                 <Label
-                  htmlFor={manager.id}
+                  htmlFor={index.toString()}
                   className="flex-1 cursor-pointer flex items-center justify-between"
                 >
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300">
                       <span className="text-primary font-bold font-sans text-lg">
-                        {manager.name.charAt(0)}
+                        📱
                       </span>
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground font-sans group-hover:text-primary transition-colors">{manager.name}</p>
-                      <p className="text-sm text-muted-foreground font-sans">{manager.phone}</p>
+                      <p className="font-semibold text-foreground font-sans group-hover:text-primary transition-colors">{contact.name}</p>
+                      <p className="text-sm text-muted-foreground font-sans">{contact.number}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end space-y-1 sm:space-y-2">
-                    <Badge
-                      variant={manager.product === 'VPH' ? 'default' : 'secondary'}
+                    {/* <Badge
+                      variant="default"
                       className="font-sans shadow-sm"
                     >
-                      {manager.product}
-                    </Badge>
-                    <Badge variant="outline" className="font-sans text-xs border-primary/20">
-                      {manager.sede}
-                    </Badge>
+                      Gestor
+                    </Badge> */}
+                    {/* <Badge variant="outline" className="font-sans text-xs border-primary/20">
+                      {manager.username}
+                    </Badge> */}
                   </div>
                 </Label>
               </div>
             ))}
           </div>
-        </RadioGroup>
+        </div>
       </CardContent>
     </Card>
   );
