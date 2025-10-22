@@ -12,17 +12,24 @@ import { sendMassives, type MassivesRequest } from '@/services/massives';
 
 // Lista de números conectados con nombres (solo ✅)
 const CONNECTED_PHONE_NUMBERS = [
+
+  // Tadeo
   { name: "Tadeo Coordinador GOLF", number: "51941554272" },
   { name: "Francesca Arias", number: "51964317736" },
   { name: "Madelein JM Inluxury", number: "5198746418" },
-  { name: "Melanny corpo JM", number: "51956725804" },
-  { name: "Eliana corpo JM", number: "51956725811" },
-  { name: "Roxana", number: "51993997532" },
-  { name: "Lisbeth InAesthetics", number: "51953200699" },
-  { name: "Yohanna JM InAesthetics", number: "51974309260" },
-  { name: "Katherine -Yohanna InLuxury", number: "51997621747" },
-  { name: "Rodrigo INB2B", number: "51943583887" },
-  { name: "Fernando INB2B", number: "51969332494" },  
+  // Pershing
+  { name: "Roxana Coordinadora", number: "51993997532" },
+  { name: "Eliana Supervisora JM", number: "51956725811" },
+  { name: "Lizbeth Admisionista Inlux", number: "51953200699" },
+  { name: "Alison - Admision Uro", number: "51934386224" },
+  { name: "Melanny T. admision Uro JM", number: "51956725804" },
+  { name: "Madelein - Admision Uro", number: "51987546418" },
+
+  // Sur
+  { name: "Nayelly - Coord.", number: "51942756593" },
+  { name: "Vanesa - Admis.", number: "51942756612" },
+  { name: "Mayte - Lab.", number: "51942756612" },
+ 
 ];
 
 export default function ExcelReader() {
