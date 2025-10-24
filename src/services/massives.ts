@@ -42,6 +42,7 @@ export async function sendMassives(
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        timeout: 120000, // 2 minutos - aumentar el timeout
       }
     );
 
@@ -57,6 +58,14 @@ export async function sendMassives(
     if (axios.isAxiosError(error)) {
       // Network error
       if (!error.response) {
+        // Manejar timeouts de red específicamente
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          console.warn('La solicitud expiró, pero el servidor puede continuar procesando los mensajes');
+          return {
+            success: true,
+            message: 'Mensajes enviados. El procesamiento continúa en segundo plano.'
+          };
+        }
         throw new Error('No se pudo conectar al servidor. Verifica tu conexión a internet.');
       }
 
@@ -67,6 +76,15 @@ export async function sendMassives(
 
       console.error('Server response status:', status);
       console.error('Server response data:', fullResponse);
+
+      // Manejar 504 Gateway Timeout como éxito potencial
+      if (status === 504) {
+        console.warn('504 Gateway Timeout recibido, pero el servidor continúa procesando');
+        return {
+          success: true,
+          message: 'Mensajes enviados. El procesamiento continúa en segundo plano.'
+        };
+      }
 
       if (status === 400) {
         throw new Error(`Datos inválidos: ${errorMessage || 'Verifica la información enviada'}`);

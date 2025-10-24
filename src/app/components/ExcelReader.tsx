@@ -12,7 +12,6 @@ import { sendMassives, type MassivesRequest } from '@/services/massives';
 
 // Lista de números conectados con nombres (solo ✅)
 const CONNECTED_PHONE_NUMBERS = [
-
   // Tadeo
   { name: "Tadeo Coordinador GOLF", number: "51941554272" },
   { name: "Francesca Arias", number: "51964317736" },
@@ -24,12 +23,10 @@ const CONNECTED_PHONE_NUMBERS = [
   { name: "Alison - Admision Uro", number: "51934386224" },
   { name: "Melanny T. admision Uro JM", number: "51956725804" },
   { name: "Madelein - Admision Uro", number: "51987546418" },
-
   // Sur
   { name: "Nayelly - Coord.", number: "51942756593" },
   { name: "Vanesa - Admis.", number: "51942756612" },
   { name: "Mayte - Lab.", number: "51942756612" },
- 
 ];
 
 export default function ExcelReader() {
