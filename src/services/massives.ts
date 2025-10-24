@@ -34,6 +34,8 @@ export async function sendMassives(
     formData.append('file', file);
   }
 
+  // XD
+
   try {
     const response = await axios.post<MassivesResponse>(
       'https://callhub.insalud.pe/api/massives',
