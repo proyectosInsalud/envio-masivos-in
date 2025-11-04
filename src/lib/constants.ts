@@ -11,4 +11,6 @@ export const CONNECTED_PHONE_NUMBERS = [
   { name: "Katherine -Yohanna InLuxury", number: "51997621747" },
   { name: "Rodrigo INB2B", number: "51943583887" },
   { name: "Fernando INB2B", number: "51969332494" },
+  { name: "Jazmin Gutiérrez", number: "51934386825" },
+  { name: "Lizeth Majino", number: "51934470960" },
 ];
