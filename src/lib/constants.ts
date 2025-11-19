@@ -15,4 +15,5 @@ export const CONNECTED_PHONE_NUMBERS = [
   { name: "Lizeth Majino", number: "51934470960" },
   { name: "Jazmine Gutierrez CR", number: "+50672352114" },
   { name: "Yanaiska Nuñez", number: "+50670570043" },
+  { name: "Paula Cascante", number: "+50670570071" },
 ];
